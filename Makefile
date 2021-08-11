@@ -1,17 +1,20 @@
 BIN=decode
 TARBALL=sysoft-project.tar.gz
 
-.PHONY: clean build compress
-all: build
+all: $(BIN) 
 
-build: $(BIN)
+$(BIN): bypass.o change_fix.o decode.o libcypher.so
+	gcc -m32 -L. -o $@ change_fix.o bypass.o decode.o -lcypher -Wl,-rpath='$$ORIGIN'
 
-$(BIN): decode.o libcypher.so
-	gcc -m32 -L. -o $@ $< -lcypher -Wl,-rpath=.
+bypass.o: bypass.c
+	gcc -m32 -c $^
 
-compress: $(BIN)
-	tar -czf $(TARBALL) $(BIN) crypt1.dat crypt2.dat decode.o libcypher.so
+change_fix.o: change_fix.s
+	as -32 $< -o $@
+
+.PHONY: clean compress
+compress: 
+	tar -czvf $(TARBALL) decode.o bypass.c change_fix.s libcypher.so Makefile
 
 clean:
-	rm -f $(BIN) $(TARBALL)
-
+	rm -f $(BIN) $(TARBALL) bypass.o fix.o change_fix.o
